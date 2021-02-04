@@ -521,6 +521,7 @@ impl Parsed {
     ///
     /// This method is able to determine the time from given subset of fields:
     ///
+    /// - Hour. (minute, second and nanosecond assumed to be 0)
     /// - Hour, minute. (second and nanosecond assumed to be 0)
     /// - Hour, minute, second. (nanosecond assumed to be 0)
     /// - Hour, minute, second, nanosecond.
@@ -539,13 +540,12 @@ impl Parsed {
         };
         let hour = hour_div_12 * 12 + hour_mod_12;
 
-        let minute = match self.minute {
-            Some(v @ 0...59) => v,
-            Some(_) => return Err(OUT_OF_RANGE),
-            None => return Err(NOT_ENOUGH),
+        // we allow omitting minutes, seconds or nanoseconds, but they should be in the range.
+        let minute = match self.minute.unwrap_or(0) {
+            v @ 0...59 => v,
+            _ => return Err(OUT_OF_RANGE),
         };
 
-        // we allow omitting seconds or nanoseconds, but they should be in the range.
         let (second, mut nano) = match self.second.unwrap_or(0) {
             v @ 0...59 => (v, 0),
             60 => (59, 1_000_000_000),
